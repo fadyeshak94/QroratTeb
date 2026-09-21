@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QroratTeb.Data;
 
@@ -11,9 +12,11 @@ using QroratTeb.Data;
 namespace QroratTeb.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260921103959_AddFamilyEntity")]
+    partial class AddFamilyEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -94,45 +97,6 @@ namespace QroratTeb.Migrations
                             Committee = "المنطقة الأولى",
                             Name = "خادم تجريبي",
                             Phone = "01000000000"
-                        });
-                });
-
-            modelBuilder.Entity("QroratTeb.Entities.User", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ServantId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServantId");
-
-                    b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            PasswordHash = "admin123",
-                            Role = "Admin",
-                            Username = "admin"
                         });
                 });
 
@@ -262,15 +226,6 @@ namespace QroratTeb.Migrations
                     b.HasIndex("VisitId");
 
                     b.ToTable("VisitNeeds");
-                });
-
-            modelBuilder.Entity("QroratTeb.Entities.User", b =>
-                {
-                    b.HasOne("QroratTeb.Entities.Servant", "Servant")
-                        .WithMany()
-                        .HasForeignKey("ServantId");
-
-                    b.Navigation("Servant");
                 });
 
             modelBuilder.Entity("QroratTeb.Entities.Visit", b =>

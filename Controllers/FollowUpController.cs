@@ -7,8 +7,11 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace QroratTeb.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class FollowUpController : ControllerBase
@@ -26,6 +29,7 @@ namespace QroratTeb.Controllers
         {
             var query = _context.Visits
                 .Include(v => v.Servant)
+                .Include(v => v.Family)
                 .Include(v => v.Needs)
                 .Include(v => v.Individuals)
                 .OrderByDescending(v => v.VisitDate)
@@ -94,6 +98,35 @@ namespace QroratTeb.Controllers
             if (request.PrimaryNeeds.Contains("healthcare")) response.Targets.Add("أمين خدمة المرضى (إشعار طارئ)");
             if (request.PrimaryNeeds.Contains("social_support")) response.Targets.Add("إخوة الرب (متابعة الدعم)");
 
+            // Find or Create Family
+            var family = await _context.Families.FirstOrDefaultAsync(f => f.PhoneNumber == request.PhoneNumber);
+            if (family == null)
+            {
+                family = new Family
+                {
+                    PrimaryContactName = request.PrimaryContactName,
+                    PhoneNumber = request.PhoneNumber,
+                    WhatsAppNumber = request.WhatsAppNumber,
+                    Area = request.Address.Area,
+                    Street = request.Address.Street,
+                    BuildingNo = request.Address.BuildingNo,
+                    Floor = request.Address.Floor,
+                    Landmark = request.Address.Landmark
+                };
+                _context.Families.Add(family);
+            }
+            else
+            {
+                // Update existing family info just in case
+                family.PrimaryContactName = request.PrimaryContactName;
+                family.WhatsAppNumber = request.WhatsAppNumber;
+                family.Area = request.Address.Area;
+                family.Street = request.Address.Street;
+                family.BuildingNo = request.Address.BuildingNo;
+                family.Floor = request.Address.Floor;
+                family.Landmark = request.Address.Landmark;
+            }
+
             // Save to DB
             var visit = new Visit
             {
@@ -101,14 +134,7 @@ namespace QroratTeb.Controllers
                 WasPriestPresent = request.WasPriestPresent,
                 PriestName = request.PriestName,
                 OriginatingCommittee = request.OriginatingCommittee,
-                PrimaryContactName = request.PrimaryContactName,
-                PhoneNumber = request.PhoneNumber,
-                WhatsAppNumber = request.WhatsAppNumber,
-                Area = request.Address.Area,
-                Street = request.Address.Street,
-                BuildingNo = request.Address.BuildingNo,
-                Floor = request.Address.Floor,
-                Landmark = request.Address.Landmark,
+                Family = family,
                 PriorityFlag = flag,
                 
                 SpiritualServiceType = request.ServiceType,
@@ -150,6 +176,22 @@ namespace QroratTeb.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(response);
+        }
+        [HttpPut("{id}/resolve")]
+        public async Task<IActionResult> ResolveVisit(int id)
+        {
+            var visit = await _context.Visits.FindAsync(id);
+            if (visit == null)
+            {
+                return NotFound("Visit not found.");
+            }
+
+            visit.IsResolved = true;
+            // Optionally change priority to GREEN when resolved, or just use the flag IsResolved
+            
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "تم تحديث حالة الزيارة إلى محلولة/تمت المتابعة بنجاح." });
         }
     }
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const INITIAL_STATE = {
   servantId: '',
@@ -42,16 +43,60 @@ export default function Home() {
   const [servants, setServants] = useState([]);
   const [visitTime, setVisitTime] = useState('');
 
+  // Family Profile State
+  const [searchPhone, setSearchPhone] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [visitHistory, setVisitHistory] = useState([]);
+
   useEffect(() => {
     const now = new Date();
     setVisitTime(now.toLocaleString('ar-EG'));
 
     // Fetch Servants from API
-    fetch('http://localhost:5206/api/servants')
+    fetchWithAuth('/api/servants')
       .then(res => res.json())
       .then(data => setServants(data))
       .catch(err => console.error("Error fetching servants", err));
   }, []);
+
+  const handleSearchFamily = async () => {
+    if (!searchPhone || searchPhone.length < 11) {
+      alert("برجاء إدخال رقم هاتف صحيح للبحث");
+      return;
+    }
+    setIsSearching(true);
+    setVisitHistory([]);
+    try {
+      const res = await fetchWithAuth(`/api/family/search?phone=${searchPhone}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Auto-fill form
+        setFormData(prev => ({
+          ...prev,
+          primaryContactName: data.primaryContactName || '',
+          phoneNumber: data.phoneNumber || '',
+          whatsappNumber: data.whatsAppNumber || '',
+          address: {
+            area: data.area || '',
+            street: data.street || '',
+            buildingNo: data.buildingNo || '',
+            floor: data.floor || '',
+            landmark: data.landmark || ''
+          }
+        }));
+        setVisitHistory(data.visitHistory || []);
+        alert("تم العثور على الأسرة وملء بياناتها بنجاح!");
+      } else if (res.status === 404) {
+        alert("لم يتم العثور على عائلة مسجلة بهذا الرقم. يمكنك تسجيلها كعائلة جديدة.");
+        setFormData(prev => ({ ...prev, phoneNumber: searchPhone }));
+      }
+    } catch (e) {
+      console.error(e);
+      alert("خطأ في الاتصال بالخادم.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -163,7 +208,7 @@ export default function Home() {
           supportCategory: formData.supportCategory
         };
 
-        const response = await fetch('http://localhost:5206/api/followup', {
+        const response = await fetchWithAuth('/api/followup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -191,6 +236,51 @@ export default function Home() {
     <div className="app-container">
       <h1>نموذج الزيارات (قارورة طيب)</h1>
       <p className="subtitle">تسجيل بيانات الافتقاد الذكي والمتابعة</p>
+
+      <div className="form-section" style={{ background: '#f8fafc', border: '2px dashed #cbd5e1' }}>
+        <h2 className="section-title">بحث عن أسرة (جلب تلقائي)</h2>
+        <div className="address-grid" style={{ alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label>رقم الهاتف للبحث</label>
+            <input type="tel" value={searchPhone} onChange={(e) => setSearchPhone(e.target.value)} placeholder="أدخل رقم هاتف الأسرة..." dir="ltr" />
+          </div>
+          <button type="button" onClick={handleSearchFamily} disabled={isSearching} className="submit-btn" style={{ margin: 0, padding: '0.8rem 1rem', width: 'auto', backgroundColor: '#3b82f6' }}>
+            {isSearching ? 'جاري البحث...' : '🔍 بحث وجلب البيانات'}
+          </button>
+        </div>
+      </div>
+
+      {visitHistory.length > 0 && (
+        <div className="form-section" style={{ borderLeft: '4px solid #10b981' }}>
+          <h2 className="section-title">التاريخ الرعوي (الزيارات السابقة)</h2>
+          <table className="reports-table" style={{ width: '100%', textAlign: 'right', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f1f5f9' }}>
+                <th style={{ padding: '0.5rem' }}>التاريخ</th>
+                <th style={{ padding: '0.5rem' }}>الخادم</th>
+                <th style={{ padding: '0.5rem' }}>الأولوية</th>
+                <th style={{ padding: '0.5rem' }}>الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visitHistory.map(v => (
+                <tr key={v.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '0.5rem' }}>{new Date(v.visitDate).toLocaleDateString('ar-EG')}</td>
+                  <td style={{ padding: '0.5rem' }}>{v.servantName}</td>
+                  <td style={{ padding: '0.5rem' }}>
+                    <span className={`flag-badge flag-${v.priorityFlag.toLowerCase()}`} style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem', margin: 0 }}>
+                      {v.priorityFlag === 'RED' ? '🔴 عاجل' : v.priorityFlag === 'YELLOW' ? '🟡 متابعة' : '🟢 روتيني'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0.5rem' }}>
+                    {v.isResolved ? <span style={{ color: '#10b981' }}>✔️ محلولة</span> : <span style={{ color: '#ef4444' }}>⏳ تحت المتابعة</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="form-section">
@@ -502,7 +592,10 @@ export default function Home() {
 
             <button className="close-modal-btn" onClick={() => {
               setShowModal(false);
+              setShowModal(false);
               setFormData(INITIAL_STATE);
+              setSearchPhone('');
+              setVisitHistory([]);
               window.scrollTo(0,0);
             }}>موافق وإغلاق</button>
           </div>

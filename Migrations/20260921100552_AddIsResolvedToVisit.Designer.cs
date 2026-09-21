@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QroratTeb.Data;
 
@@ -11,9 +12,11 @@ using QroratTeb.Data;
 namespace QroratTeb.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260921100552_AddIsResolvedToVisit")]
+    partial class AddIsResolvedToVisit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,49 +24,6 @@ namespace QroratTeb.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("QroratTeb.Entities.Family", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Area")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("BuildingNo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Floor")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Landmark")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PrimaryContactName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Street")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WhatsAppNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Families");
-                });
 
             modelBuilder.Entity("QroratTeb.Entities.Servant", b =>
                 {
@@ -97,45 +57,6 @@ namespace QroratTeb.Migrations
                         });
                 });
 
-            modelBuilder.Entity("QroratTeb.Entities.User", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ServantId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServantId");
-
-                    b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            PasswordHash = "admin123",
-                            Role = "Admin",
-                            Username = "admin"
-                        });
-                });
-
             modelBuilder.Entity("QroratTeb.Entities.Visit", b =>
                 {
                     b.Property<int>("Id")
@@ -144,14 +65,22 @@ namespace QroratTeb.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BuildingNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CaregiverAvailable")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ConfessorName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("FamilyId")
-                        .HasColumnType("int");
+                    b.Property<string>("Floor")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HasConfessor")
                         .HasColumnType("nvarchar(max)");
@@ -168,11 +97,22 @@ namespace QroratTeb.Migrations
                     b.Property<bool>("IsResolved")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Landmark")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("OriginatingCommittee")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PriestName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PrimaryContactName")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PriorityFlag")
@@ -191,6 +131,10 @@ namespace QroratTeb.Migrations
                     b.Property<string>("SpiritualUrgency")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Street")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SupportLevel")
                         .HasColumnType("nvarchar(max)");
 
@@ -200,9 +144,11 @@ namespace QroratTeb.Migrations
                     b.Property<bool>("WasPriestPresent")
                         .HasColumnType("bit");
 
-                    b.HasKey("Id");
+                    b.Property<string>("WhatsAppNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("FamilyId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ServantId");
 
@@ -264,26 +210,11 @@ namespace QroratTeb.Migrations
                     b.ToTable("VisitNeeds");
                 });
 
-            modelBuilder.Entity("QroratTeb.Entities.User", b =>
-                {
-                    b.HasOne("QroratTeb.Entities.Servant", "Servant")
-                        .WithMany()
-                        .HasForeignKey("ServantId");
-
-                    b.Navigation("Servant");
-                });
-
             modelBuilder.Entity("QroratTeb.Entities.Visit", b =>
                 {
-                    b.HasOne("QroratTeb.Entities.Family", "Family")
-                        .WithMany("Visits")
-                        .HasForeignKey("FamilyId");
-
                     b.HasOne("QroratTeb.Entities.Servant", "Servant")
                         .WithMany()
                         .HasForeignKey("ServantId");
-
-                    b.Navigation("Family");
 
                     b.Navigation("Servant");
                 });
@@ -308,11 +239,6 @@ namespace QroratTeb.Migrations
                         .IsRequired();
 
                     b.Navigation("Visit");
-                });
-
-            modelBuilder.Entity("QroratTeb.Entities.Family", b =>
-                {
-                    b.Navigation("Visits");
                 });
 
             modelBuilder.Entity("QroratTeb.Entities.Visit", b =>

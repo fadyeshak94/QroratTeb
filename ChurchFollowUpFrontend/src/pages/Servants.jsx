@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 export default function Servants() {
   const [servants, setServants] = useState([]);
@@ -12,7 +13,7 @@ export default function Servants() {
 
   const fetchServants = async () => {
     try {
-      const res = await fetch('http://localhost:5206/api/servants');
+      const res = await fetchWithAuth('/api/servants');
       const data = await res.json();
       setServants(data);
     } catch (e) {
@@ -23,7 +24,7 @@ export default function Servants() {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5206/api/servants', {
+      const res = await fetchWithAuth('/api/servants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, committee })

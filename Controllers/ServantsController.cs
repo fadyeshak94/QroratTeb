@@ -5,8 +5,11 @@ using QroratTeb.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace QroratTeb.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ServantsController : ControllerBase
@@ -26,8 +29,9 @@ namespace QroratTeb.Controllers
         }
 
         // POST: api/servants
+        [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<ActionResult<Servant>> CreateServant([FromBody] Servant servant)
+        public async Task<IActionResult> AddServant([FromBody] Servant servant)
         {
             if (string.IsNullOrEmpty(servant.Name))
                 return BadRequest("Name is required");
