@@ -1,0 +1,87 @@
+using System;
+using System.Collections.Generic;
+
+namespace QroratTeb.Entities
+{
+    public class Servant
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public string? Committee { get; set; }
+    }
+
+    public class Visit
+    {
+        public int Id { get; set; }
+        public DateTime VisitDate { get; set; } = DateTime.Now;
+        
+        // Servant Information
+        public int? ServantId { get; set; }
+        public Servant? Servant { get; set; }
+        
+        // Priest Information
+        public bool WasPriestPresent { get; set; } = false;
+        public string? PriestName { get; set; }
+
+        public string OriginatingCommittee { get; set; } = string.Empty;
+        
+        // Family Information
+        public string PrimaryContactName { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string WhatsAppNumber { get; set; } = string.Empty;
+
+        // Address
+        public string Area { get; set; } = string.Empty;
+        public string Street { get; set; } = string.Empty;
+        public string BuildingNo { get; set; } = string.Empty;
+        public string? Floor { get; set; }
+        public string? Landmark { get; set; }
+
+        // AI Flagging
+        public string PriorityFlag { get; set; } = "GREEN"; // RED, YELLOW, GREEN
+
+        // Relationships
+        public ICollection<VisitNeed> Needs { get; set; } = new List<VisitNeed>();
+        public ICollection<VisitIndividual> Individuals { get; set; } = new List<VisitIndividual>();
+
+        // Optional Sections Details stored as JSON or simple strings for now
+        // Spiritual
+        public string? SpiritualServiceType { get; set; }
+        public string? HasConfessor { get; set; }
+        public string? ConfessorName { get; set; }
+        public string? IsBedridden { get; set; }
+        public string? SpiritualUrgency { get; set; }
+
+        // Healthcare
+        public string? HealthCategory { get; set; }
+        public string? HealthcareAssistanceTypes { get; set; } // Comma separated
+        public string? CaregiverAvailable { get; set; }
+
+        // Social
+        public string? SupportLevel { get; set; }
+        public string? SocialSupportCategories { get; set; } // Comma separated
+    }
+
+    public class VisitNeed
+    {
+        public int Id { get; set; }
+        public int VisitId { get; set; }
+        public Visit? Visit { get; set; }
+        
+        public string NeedCategory { get; set; } = string.Empty; 
+        // e.g. "spiritual", "sunday_school", "healthcare", "social_support", "general_visit"
+    }
+
+    public class VisitIndividual
+    {
+        public int Id { get; set; }
+        public int VisitId { get; set; }
+        public Visit? Visit { get; set; }
+
+        public string ChildName { get; set; } = string.Empty;
+        public string EducationalStage { get; set; } = string.Empty;
+        public string? SchoolCollegeName { get; set; }
+        public string NonAttendanceReason { get; set; } = string.Empty;
+    }
+}
