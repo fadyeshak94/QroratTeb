@@ -49,6 +49,24 @@ namespace QroratTeb.Controllers
             return Ok(visits);
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Visit>> GetVisit(int id)
+        {
+            var visit = await _context.Visits
+                .Include(v => v.Servant)
+                .Include(v => v.Family)
+                .Include(v => v.Needs)
+                .Include(v => v.Individuals)
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (visit == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(visit);
+        }
+
         [HttpPost]
         public async Task<ActionResult<FollowUpResponse>> Submit([FromBody] FollowUpRequest request)
         {
@@ -99,7 +117,9 @@ namespace QroratTeb.Controllers
             if (request.PrimaryNeeds.Contains("social_support")) response.Targets.Add("إخوة الرب (متابعة الدعم)");
 
             // Find or Create Family
-            var family = await _context.Families.FirstOrDefaultAsync(f => f.PhoneNumber == request.PhoneNumber);
+            var family = await _context.Families
+                .FirstOrDefaultAsync(f => f.PhoneNumber == request.PhoneNumber);
+
             if (family == null)
             {
                 family = new Family
@@ -107,6 +127,20 @@ namespace QroratTeb.Controllers
                     PrimaryContactName = request.PrimaryContactName,
                     PhoneNumber = request.PhoneNumber,
                     WhatsAppNumber = request.WhatsAppNumber,
+                    HusbandName = request.HusbandName,
+                    IsHusbandDeceased = request.IsHusbandDeceased,
+                    HusbandPhoneNumber = request.HusbandPhoneNumber,
+                    HusbandAge = request.HusbandAge,
+                    HusbandDateOfBirth = request.HusbandDateOfBirth,
+                    HusbandConfessorName = request.HusbandConfessorName,
+                    HusbandJob = request.HusbandJob,
+                    WifeName = request.WifeName,
+                    IsWifeDeceased = request.IsWifeDeceased,
+                    WifePhoneNumber = request.WifePhoneNumber,
+                    WifeAge = request.WifeAge,
+                    WifeDateOfBirth = request.WifeDateOfBirth,
+                    WifeConfessorName = request.WifeConfessorName,
+                    WifeJob = request.WifeJob,
                     Area = request.Address.Area,
                     Street = request.Address.Street,
                     BuildingNo = request.Address.BuildingNo,
@@ -117,9 +151,22 @@ namespace QroratTeb.Controllers
             }
             else
             {
-                // Update existing family info just in case
                 family.PrimaryContactName = request.PrimaryContactName;
                 family.WhatsAppNumber = request.WhatsAppNumber;
+                family.HusbandName = request.HusbandName;
+                family.IsHusbandDeceased = request.IsHusbandDeceased;
+                family.HusbandPhoneNumber = request.HusbandPhoneNumber;
+                family.HusbandAge = request.HusbandAge;
+                family.HusbandDateOfBirth = request.HusbandDateOfBirth;
+                family.HusbandConfessorName = request.HusbandConfessorName;
+                family.HusbandJob = request.HusbandJob;
+                family.WifeName = request.WifeName;
+                family.IsWifeDeceased = request.IsWifeDeceased;
+                family.WifePhoneNumber = request.WifePhoneNumber;
+                family.WifeAge = request.WifeAge;
+                family.WifeDateOfBirth = request.WifeDateOfBirth;
+                family.WifeConfessorName = request.WifeConfessorName;
+                family.WifeJob = request.WifeJob;
                 family.Area = request.Address.Area;
                 family.Street = request.Address.Street;
                 family.BuildingNo = request.Address.BuildingNo;
@@ -144,8 +191,9 @@ namespace QroratTeb.Controllers
                 SpiritualUrgency = request.SpiritualUrgency,
                 
                 HealthCategory = request.HealthCategory,
-                HealthcareAssistanceTypes = string.Join(",", request.AssistanceType),
+                HealthcareAssistanceTypes = request.AssistanceType != null ? string.Join(",", request.AssistanceType) : "",
                 CaregiverAvailable = request.CaregiverAvailable,
+                HealthcarePatientName = request.HealthcarePatientName,
                 
                 SupportLevel = request.SupportLevel,
                 SocialSupportCategories = string.Join(",", request.SupportCategory),
@@ -158,18 +206,21 @@ namespace QroratTeb.Controllers
                 visit.Needs.Add(new VisitNeed { NeedCategory = need });
             }
 
-            if (request.PrimaryNeeds.Contains("sunday_school"))
+            foreach(var ind in request.IndividualsList)
             {
-                foreach(var ind in request.IndividualsList)
+                visit.Individuals.Add(new VisitIndividual
                 {
-                    visit.Individuals.Add(new VisitIndividual
-                    {
-                        ChildName = ind.ChildName,
-                        EducationalStage = ind.EducationalStage,
-                        SchoolCollegeName = ind.SchoolCollegeName,
-                        NonAttendanceReason = ind.NonAttendanceReason
-                    });
-                }
+                    ChildName = ind.ChildName,
+                    PhoneNumber = ind.PhoneNumber,
+                    Age = ind.Age,
+                    DateOfBirth = ind.DateOfBirth,
+                    Relation = ind.Relation,
+                    ConfessorName = ind.ConfessorName,
+                    EducationalStage = ind.EducationalStage,
+                    SchoolCollegeName = ind.SchoolCollegeName,
+                    NonAttendanceReason = ind.NonAttendanceReason,
+                    OtherChurchName = ind.OtherChurchName
+                });
             }
 
             _context.Visits.Add(visit);
@@ -177,6 +228,101 @@ namespace QroratTeb.Controllers
 
             return Ok(response);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateVisit(int id, [FromBody] FollowUpRequest request)
+        {
+            var visit = await _context.Visits
+                .Include(v => v.Family)
+                .Include(v => v.Needs)
+                .Include(v => v.Individuals)
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (visit == null)
+                return NotFound("الزيارة غير موجودة");
+
+            // Update family
+            if (visit.Family != null)
+            {
+                visit.Family.PrimaryContactName = request.PrimaryContactName;
+                visit.Family.PhoneNumber = request.PhoneNumber;
+                visit.Family.WhatsAppNumber = request.WhatsAppNumber;
+                visit.Family.HusbandName = request.HusbandName;
+                visit.Family.IsHusbandDeceased = request.IsHusbandDeceased;
+                visit.Family.HusbandPhoneNumber = request.HusbandPhoneNumber;
+                visit.Family.HusbandAge = request.HusbandAge;
+                visit.Family.HusbandDateOfBirth = request.HusbandDateOfBirth;
+                visit.Family.HusbandConfessorName = request.HusbandConfessorName;
+                visit.Family.HusbandJob = request.HusbandJob;
+                visit.Family.WifeName = request.WifeName;
+                visit.Family.IsWifeDeceased = request.IsWifeDeceased;
+                visit.Family.WifePhoneNumber = request.WifePhoneNumber;
+                visit.Family.WifeAge = request.WifeAge;
+                visit.Family.WifeDateOfBirth = request.WifeDateOfBirth;
+                visit.Family.WifeConfessorName = request.WifeConfessorName;
+                visit.Family.WifeJob = request.WifeJob;
+                visit.Family.Area = request.Address.Area;
+                visit.Family.Street = request.Address.Street;
+                visit.Family.BuildingNo = request.Address.BuildingNo;
+                visit.Family.Floor = request.Address.Floor;
+                visit.Family.Landmark = request.Address.Landmark;
+            }
+
+            // Update Visit Basic Info
+            visit.ServantId = request.ServantId;
+            visit.WasPriestPresent = request.WasPriestPresent;
+            visit.PriestName = request.PriestName;
+            visit.OriginatingCommittee = request.OriginatingCommittee;
+
+            visit.SpiritualServiceType = request.ServiceType;
+            visit.HasConfessor = request.HasConfessor;
+            visit.ConfessorName = request.ConfessorName;
+            visit.IsBedridden = request.IsBedridden;
+            visit.SpiritualUrgency = request.SpiritualUrgency;
+            
+            visit.HealthCategory = request.HealthCategory;
+            visit.HealthcareAssistanceTypes = request.AssistanceType != null ? string.Join(",", request.AssistanceType) : "";
+            visit.CaregiverAvailable = request.CaregiverAvailable;
+            visit.HealthcarePatientName = request.HealthcarePatientName;
+            
+            visit.SupportLevel = request.SupportLevel;
+            visit.SocialSupportCategories = string.Join(",", request.SupportCategory);
+
+            // Re-evaluate Priority Flag
+            bool isRed = request.ServiceType == "تناول مرضى بالمنزل" || request.HealthCategory == "جراحة عاجلة" || request.SupportLevel == "🔴 عاجل جداً" || request.SpiritualUrgency == "🔴 عاجل خلال 24 ساعة";
+            bool isYellow = request.ServiceType == "سر الاعتراف" || request.SupportLevel == "🟡 متوسط" || request.IndividualsList.Any(i => i.NonAttendanceReason == "أسباب نفسية/اجتماعية");
+            visit.PriorityFlag = isRed ? "RED" : (isYellow ? "YELLOW" : "GREEN");
+
+            // Update Needs
+            _context.Set<VisitNeed>().RemoveRange(visit.Needs);
+            visit.Needs.Clear();
+            foreach(var need in request.PrimaryNeeds)
+                visit.Needs.Add(new VisitNeed { NeedCategory = need });
+
+            // Update Individuals
+            _context.Set<VisitIndividual>().RemoveRange(visit.Individuals);
+            visit.Individuals.Clear();
+            foreach(var ind in request.IndividualsList)
+            {
+                visit.Individuals.Add(new VisitIndividual
+                {
+                    ChildName = ind.ChildName,
+                    PhoneNumber = ind.PhoneNumber,
+                    Age = ind.Age,
+                    DateOfBirth = ind.DateOfBirth,
+                    Relation = ind.Relation,
+                    ConfessorName = ind.ConfessorName,
+                    EducationalStage = ind.EducationalStage,
+                    SchoolCollegeName = ind.SchoolCollegeName,
+                    NonAttendanceReason = ind.NonAttendanceReason,
+                    OtherChurchName = ind.OtherChurchName
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "تم تعديل الزيارة بنجاح" });
+        }
+
         [HttpPut("{id}/resolve")]
         public async Task<IActionResult> ResolveVisit(int id)
         {

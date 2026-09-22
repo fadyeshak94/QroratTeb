@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const INITIAL_STATE = {
   servantId: '',
@@ -49,7 +50,10 @@ const INITIAL_STATE = {
   supportCategory: []
 };
 
-export default function Home() {
+export default function EditVisit() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -64,68 +68,86 @@ export default function Home() {
   const [visitHistory, setVisitHistory] = useState([]);
 
   useEffect(() => {
-    const now = new Date();
-    setVisitTime(now.toLocaleString('ar-EG'));
-
     // Fetch Servants from API
     fetchWithAuth('/api/servants')
       .then(res => res.json())
       .then(data => setServants(data))
       .catch(err => console.error("Error fetching servants", err));
-  }, []);
 
-  const handleSearchFamily = async () => {
-    if (!searchPhone || searchPhone.length < 11) {
-      alert("برجاء إدخال رقم هاتف صحيح للبحث");
-      return;
+    // Fetch Visit Details
+    if (id) {
+      fetchWithAuth(`/api/followup/${id}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch visit');
+          return res.json();
+        })
+        .then(data => {
+          setVisitTime(new Date(data.visitDate).toLocaleString('ar-EG'));
+          
+          setFormData({
+            servantId: data.servantId || '',
+            wasPriestPresent: data.wasPriestPresent ? 'yes' : 'no',
+            priestName: data.priestName || '',
+            originatingCommittee: data.originatingCommittee || '',
+            primaryContactName: data.family?.primaryContactName || '',
+            phoneNumber: data.family?.phoneNumber || '',
+            whatsappNumber: data.family?.whatsAppNumber || '',
+            husbandName: data.family?.husbandName || '',
+            isHusbandDeceased: data.family?.isHusbandDeceased || false,
+            husbandPhoneNumber: data.family?.husbandPhoneNumber || '',
+            husbandAge: data.family?.husbandAge || '',
+            husbandDateOfBirth: data.family?.husbandDateOfBirth || '',
+            husbandConfessorName: data.family?.husbandConfessorName || '',
+            husbandJob: data.family?.husbandJob || '',
+            wifeName: data.family?.wifeName || '',
+            isWifeDeceased: data.family?.isWifeDeceased || false,
+            wifePhoneNumber: data.family?.wifePhoneNumber || '',
+            wifeAge: data.family?.wifeAge || '',
+            wifeDateOfBirth: data.family?.wifeDateOfBirth || '',
+            wifeConfessorName: data.family?.wifeConfessorName || '',
+            wifeJob: data.family?.wifeJob || '',
+            address: {
+              area: data.family?.area || '',
+              street: data.family?.street || '',
+              buildingNo: data.family?.buildingNo || '',
+              floor: data.family?.floor || '',
+              landmark: data.family?.landmark || ''
+            },
+            primaryNeeds: data.needs?.map(n => n.needCategory) || [],
+            serviceType: data.spiritualServiceType || '',
+            hasConfessor: data.hasConfessor || '',
+            confessorName: data.confessorName || '',
+            isBedridden: data.isBedridden || '',
+            spiritualUrgency: data.spiritualUrgency || '',
+            individualsList: data.individuals?.length > 0 ? data.individuals.map(ind => ({
+              id: ind.id,
+              childName: ind.childName || '',
+              phoneNumber: ind.phoneNumber || '',
+              age: ind.age || '',
+              dateOfBirth: ind.dateOfBirth || '',
+              relation: ind.relation || '',
+              confessorName: ind.confessorName || '',
+              educationalStage: ind.educationalStage || '',
+              schoolCollegeName: ind.schoolCollegeName || '',
+              nonAttendanceReason: ind.nonAttendanceReason || '',
+              otherChurchName: ind.otherChurchName || ''
+            })) : [{ id: Date.now(), childName: '', phoneNumber: '', age: '', dateOfBirth: '', relation: '', confessorName: '', educationalStage: '', schoolCollegeName: '', nonAttendanceReason: '', otherChurchName: '' }],
+            healthCategory: data.healthCategory || '',
+            assistanceType: data.healthcareAssistanceTypes ? data.healthcareAssistanceTypes.split(',') : [],
+            caregiverAvailable: data.caregiverAvailable || '',
+            patientName: data.healthcarePatientName || '',
+            supportLevel: data.supportLevel || '',
+            supportCategory: data.socialSupportCategories ? data.socialSupportCategories.split(',') : []
+          });
+        })
+        .catch(err => {
+          console.error("Error fetching visit", err);
+          alert("حدث خطأ أثناء جلب بيانات الزيارة");
+        });
     }
-    setIsSearching(true);
-    setVisitHistory([]);
-    try {
-      const res = await fetchWithAuth(`/api/family/search?phone=${searchPhone}`);
-      if (res.ok) {
-        const data = await res.json();
-        // Auto-fill form
-        setFormData(prev => ({
-          ...prev,
-          primaryContactName: data.primaryContactName || '',
-          phoneNumber: data.phoneNumber || '',
-          whatsappNumber: data.whatsAppNumber || '',
-          address: {
-            area: data.area || '',
-            street: data.street || '',
-            buildingNo: data.buildingNo || '',
-            floor: data.floor || '',
-            landmark: data.landmark || ''
-          },
-          husbandName: data.husbandName || '',
-          isHusbandDeceased: data.isHusbandDeceased || false,
-          husbandPhoneNumber: data.husbandPhoneNumber || '',
-          husbandAge: data.husbandAge || '',
-          husbandDateOfBirth: data.husbandDateOfBirth || '',
-          husbandConfessorName: data.husbandConfessorName || '',
-          husbandJob: data.husbandJob || '',
-          wifeName: data.wifeName || '',
-          isWifeDeceased: data.isWifeDeceased || false,
-          wifePhoneNumber: data.wifePhoneNumber || '',
-          wifeAge: data.wifeAge || '',
-          wifeDateOfBirth: data.wifeDateOfBirth || '',
-          wifeConfessorName: data.wifeConfessorName || '',
-          wifeJob: data.wifeJob || ''
-        }));
-        setVisitHistory(data.visitHistory || []);
-        alert("تم العثور على الأسرة وملء بياناتها بنجاح!");
-      } else if (res.status === 404) {
-        alert("لم يتم العثور على عائلة مسجلة بهذا الرقم. يمكنك تسجيلها كعائلة جديدة.");
-        setFormData(prev => ({ ...prev, phoneNumber: searchPhone }));
-      }
-    } catch (e) {
-      console.error(e);
-      alert("خطأ في الاتصال بالخادم.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  }, [id]);
+
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -252,16 +274,15 @@ export default function Home() {
           supportCategory: formData.supportCategory
         };
 
-        const response = await fetchWithAuth('/api/followup', {
-          method: 'POST',
+        const response = await fetchWithAuth(`/api/followup/${id}`, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         
         if (response.ok) {
-          const result = await response.json();
-          setSubmitResult(result);
-          setShowModal(true);
+          alert('تم تعديل الزيارة بنجاح');
+          navigate('/reports');
         } else {
           alert('حدث خطأ أثناء إرسال البيانات للخادم.');
         }
@@ -278,53 +299,8 @@ export default function Home() {
 
   return (
     <div className="app-container">
-      <h1>نموذج الزيارات (قارورة طيب)</h1>
-      <p className="subtitle">تسجيل بيانات الافتقاد الذكي والمتابعة</p>
-
-      <div className="form-section" style={{ background: '#f8fafc', border: '2px dashed #cbd5e1' }}>
-        <h2 className="section-title">بحث عن أسرة (جلب تلقائي)</h2>
-        <div className="address-grid" style={{ alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>رقم الهاتف للبحث</label>
-            <input type="tel" value={searchPhone} onChange={(e) => setSearchPhone(e.target.value)} placeholder="أدخل رقم هاتف الأسرة..." dir="ltr" />
-          </div>
-          <button type="button" onClick={handleSearchFamily} disabled={isSearching} className="submit-btn" style={{ margin: 0, padding: '0.8rem 1rem', width: 'auto', backgroundColor: '#3b82f6' }}>
-            {isSearching ? 'جاري البحث...' : '🔍 بحث وجلب البيانات'}
-          </button>
-        </div>
-      </div>
-
-      {visitHistory.length > 0 && (
-        <div className="form-section" style={{ borderLeft: '4px solid #10b981' }}>
-          <h2 className="section-title">التاريخ الرعوي (الزيارات السابقة)</h2>
-          <table className="reports-table" style={{ width: '100%', textAlign: 'right', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f1f5f9' }}>
-                <th style={{ padding: '0.5rem' }}>التاريخ</th>
-                <th style={{ padding: '0.5rem' }}>الخادم</th>
-                <th style={{ padding: '0.5rem' }}>الأولوية</th>
-                <th style={{ padding: '0.5rem' }}>الحالة</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visitHistory.map(v => (
-                <tr key={v.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.5rem' }}>{new Date(v.visitDate).toLocaleDateString('ar-EG')}</td>
-                  <td style={{ padding: '0.5rem' }}>{v.servantName}</td>
-                  <td style={{ padding: '0.5rem' }}>
-                    <span className={`flag-badge flag-${v.priorityFlag.toLowerCase()}`} style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem', margin: 0 }}>
-                      {v.priorityFlag === 'RED' ? '🔴 عاجل' : v.priorityFlag === 'YELLOW' ? '🟡 متابعة' : '🟢 روتيني'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.5rem' }}>
-                    {v.isResolved ? <span style={{ color: '#10b981' }}>✔️ محلولة</span> : <span style={{ color: '#ef4444' }}>⏳ تحت المتابعة</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <h1>تعديل الزيارة</h1>
+      <p className="subtitle">تعديل بيانات الافتقاد المسجلة مسبقاً</p>
 
       <form onSubmit={handleSubmit}>
         <div className="form-section">
@@ -761,39 +737,11 @@ export default function Home() {
         )}
 
         <button type="submit" className="submit-btn" disabled={isLoading} style={{ opacity: isLoading ? 0.7 : 1 }}>
-          {isLoading ? 'جاري الإرسال...' : 'إرسال تقرير الزيارة 🚀'}
+          {isLoading ? 'جاري الحفظ...' : 'تحديث تقرير الزيارة 🚀'}
         </button>
       </form>
 
-      {/* RESULT MODAL */}
-      {showModal && submitResult && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>تم حفظ الزيارة بقاعدة البيانات! 🎉</h2>
-            <p>التقييم الذكي للحالة:</p>
-            
-            <div className={`flag-badge flag-${submitResult.flag?.toLowerCase()}`}>
-              {submitResult.flagAr}
-            </div>
 
-            <div style={{marginTop: '1.5rem', textAlign: 'right', background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0'}}>
-              <h3 style={{fontSize: '1rem', marginBottom: '0.5rem'}}>الجهات الموجهة:</h3>
-              <ul style={{listStylePosition: 'inside', color: '#475569', fontSize: '0.9rem'}}>
-                {submitResult.targets?.map((t, idx) => <li key={idx}>{t}</li>)}
-              </ul>
-            </div>
-
-            <button className="close-modal-btn" onClick={() => {
-              setShowModal(false);
-              setShowModal(false);
-              setFormData(INITIAL_STATE);
-              setSearchPhone('');
-              setVisitHistory([]);
-              window.scrollTo(0,0);
-            }}>موافق وإغلاق</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

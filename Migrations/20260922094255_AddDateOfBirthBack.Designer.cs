@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QroratTeb.Data;
 
@@ -11,9 +12,11 @@ using QroratTeb.Data;
 namespace QroratTeb.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922094255_AddDateOfBirthBack")]
+    partial class AddDateOfBirthBack
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,22 +44,7 @@ namespace QroratTeb.Migrations
                     b.Property<string>("Floor")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("HusbandAge")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandConfessorName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandDateOfBirth")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandJob")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("HusbandName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandPhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsHusbandDeceased")
@@ -84,22 +72,7 @@ namespace QroratTeb.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("WifeAge")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeConfessorName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeDateOfBirth")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeJob")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("WifeName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifePhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -202,9 +175,6 @@ namespace QroratTeb.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HealthcareAssistanceTypes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HealthcarePatientName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IsBedridden")

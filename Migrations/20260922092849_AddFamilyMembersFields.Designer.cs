@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QroratTeb.Data;
 
@@ -11,9 +12,11 @@ using QroratTeb.Data;
 namespace QroratTeb.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922092849_AddFamilyMembersFields")]
+    partial class AddFamilyMembersFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,30 +44,6 @@ namespace QroratTeb.Migrations
                     b.Property<string>("Floor")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("HusbandAge")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandConfessorName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandDateOfBirth")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandJob")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HusbandPhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsHusbandDeceased")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsWifeDeceased")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Landmark")
                         .HasColumnType("nvarchar(max)");
 
@@ -82,24 +61,6 @@ namespace QroratTeb.Migrations
 
                     b.Property<string>("WhatsAppNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeAge")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeConfessorName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeDateOfBirth")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeJob")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifeName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WifePhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -204,9 +165,6 @@ namespace QroratTeb.Migrations
                     b.Property<string>("HealthcareAssistanceTypes")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("HealthcarePatientName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("IsBedridden")
                         .HasColumnType("nvarchar(max)");
 
@@ -262,14 +220,8 @@ namespace QroratTeb.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Age")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ChildName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ConfessorName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DateOfBirth")
@@ -279,11 +231,14 @@ namespace QroratTeb.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeceased")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsHeadOfFamily")
+                        .HasColumnType("bit");
+
                     b.Property<string>("NonAttendanceReason")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OtherChurchName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")

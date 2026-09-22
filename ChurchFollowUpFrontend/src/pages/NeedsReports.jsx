@@ -3,14 +3,13 @@ import * as XLSX from 'xlsx';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import { useNavigate } from 'react-router-dom';
 
-export default function Reports() {
+export default function NeedsReports() {
   const navigate = useNavigate();
+  const [allVisits, setAllVisits] = useState([]);
   const [visits, setVisits] = useState([]);
-  const [servants, setServants] = useState([]);
   
   // Filters
-  const [filterServant, setFilterServant] = useState('');
-  const [filterPriority, setFilterPriority] = useState('');
+  const [filterNeed, setFilterNeed] = useState('');
 
   // Print and View state
   const [printMode, setPrintMode] = useState('list'); // 'list' or 'single'
@@ -18,29 +17,22 @@ export default function Reports() {
   const [showViewModal, setShowViewModal] = useState(false);
 
   useEffect(() => {
-    fetchServants();
     fetchReports();
-  }, [filterServant, filterPriority]);
+  }, []);
 
-  const fetchServants = async () => {
-    try {
-      const res = await fetchWithAuth('/api/servants');
-      const data = await res.json();
-      setServants(data);
-    } catch (e) {
-      console.error(e);
+  useEffect(() => {
+    if (!filterNeed) {
+      setVisits(allVisits);
+    } else {
+      setVisits(allVisits.filter(v => v.needs && v.needs.some(n => n.needCategory === filterNeed)));
     }
-  };
+  }, [filterNeed, allVisits]);
 
   const fetchReports = async () => {
     try {
-      let url = '/api/followup?';
-      if (filterPriority) url += `priorityFlag=${filterPriority}&`;
-      if (filterServant) url += `servantId=${filterServant}&`;
-
-      const res = await fetchWithAuth(url);
+      const res = await fetchWithAuth('/api/followup');
       const data = await res.json();
-      setVisits(data);
+      setAllVisits(data);
     } catch (e) {
       console.error(e);
     }
@@ -69,21 +61,46 @@ export default function Reports() {
       return;
     }
 
-    const exportData = visits.map(v => ({
-      "التاريخ": new Date(v.visitDate).toLocaleDateString('ar-EG'),
-      "اسم جهة الاتصال": v.family ? v.family.primaryContactName : '-',
-      "رقم الهاتف": v.family ? v.family.phoneNumber : '-',
-      "رقم الواتساب": (v.family && v.family.whatsAppNumber) ? v.family.whatsAppNumber : '-',
-      "المنطقة": v.family ? v.family.area : '-',
-      "الشارع": v.family ? v.family.street : '-',
-      "العمارة": v.family ? v.family.buildingNo : '-',
-      "الدور": (v.family && v.family.floor) ? v.family.floor : '-',
-      "لجنة التوجيه": v.originatingCommittee,
-      "الخادم": v.servant ? v.servant.name : '-',
-      "حضور كاهن": v.wasPriestPresent ? `نعم - ${v.priestName}` : 'لا',
-      "الأولوية": v.priorityFlag === 'RED' ? 'عاجل' : (v.priorityFlag === 'YELLOW' ? 'متابعة' : 'روتيني'),
-      "حالة المتابعة": v.isResolved ? 'محلولة/تمت المتابعة' : 'تحت المتابعة'
-    }));
+    let exportData = [];
+
+    if (filterNeed === 'sunday_school') {
+      // Export individuals
+      exportData = visits.flatMap(v => {
+        if (!v.individuals || v.individuals.length === 0) return [];
+        return v.individuals.map(ind => ({
+          "اسم الابن/الابنة": ind.childName || '-',
+          "القرابة": ind.relation || '-',
+          "تاريخ الميلاد": ind.dateOfBirth || '-',
+          "السن": ind.age || '-',
+          "المرحلة الدراسية": ind.educationalStage || '-',
+          "المدرسة/الكلية": ind.schoolCollegeName || '-',
+          "رقم التليفون": ind.phoneNumber || '-',
+          "أب الاعتراف": ind.confessorName || '-',
+          "اسم ولي الأمر": v.family?.primaryContactName || '-',
+          "تليفون ولي الأمر": v.family?.phoneNumber || '-',
+          "سبب الانقطاع": ind.nonAttendanceReason || '-',
+          "كنيسة أخرى": ind.otherChurchName || '-'
+        }));
+      });
+    } else {
+      // Export general visits
+      exportData = visits.map(v => ({
+        "التاريخ": new Date(v.visitDate).toLocaleDateString('ar-EG'),
+        "اسم جهة الاتصال": v.family ? v.family.primaryContactName : '-',
+        "رقم الهاتف": v.family ? v.family.phoneNumber : '-',
+        "رقم الواتساب": (v.family && v.family.whatsAppNumber) ? v.family.whatsAppNumber : '-',
+        "المنطقة": v.family ? v.family.area : '-',
+        "الشارع": v.family ? v.family.street : '-',
+        "العمارة": v.family ? v.family.buildingNo : '-',
+        "الدور": (v.family && v.family.floor) ? v.family.floor : '-',
+        "لجنة التوجيه": v.originatingCommittee,
+        "الخادم": v.servant ? v.servant.name : '-',
+        "حضور كاهن": v.wasPriestPresent ? `نعم - ${v.priestName}` : 'لا',
+        "اسم المريض": filterNeed === 'healthcare' ? (v.healthcarePatientName || '-') : '-',
+        "الأولوية": v.priorityFlag === 'RED' ? 'عاجل' : (v.priorityFlag === 'YELLOW' ? 'متابعة' : 'روتيني'),
+        "حالة المتابعة": v.isResolved ? 'محلولة/تمت المتابعة' : 'تحت المتابعة'
+      }));
+    }
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
@@ -127,7 +144,7 @@ export default function Reports() {
       {/* -------------------- LIST PRINT VIEW -------------------- */}
       <div className="list-print-view">
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-          <h1>تقارير الزيارات</h1>
+          <h1>تقارير الاحتياجات (مفصلة)</h1>
           <div className="no-print" style={{display: 'flex', gap: '1rem'}}>
             <button onClick={handleExportExcel} className="submit-btn" style={{width: 'auto', margin: 0, padding: '0.5rem 1.5rem', backgroundColor: '#10b981'}}>
               📊 تصدير Excel
@@ -141,99 +158,117 @@ export default function Reports() {
         <div className="form-section no-print">
           <h2 className="section-title">فلاتر البحث</h2>
           <div className="address-grid">
-            <div className="form-group">
-              <label>فلترة بالخادم</label>
-              <select value={filterServant} onChange={(e) => setFilterServant(e.target.value)}>
-                <option value="">الكل</option>
-                {servants.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>فلترة بالأولوية</label>
-              <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
-                <option value="">الكل</option>
-                <option value="RED">🔴 عاجل وطارئ</option>
-                <option value="YELLOW">🟡 متابعة قريبة</option>
-                <option value="GREEN">🟢 روتيني</option>
+            <div className="form-group" style={{gridColumn: '1 / -1'}}>
+              <label>فلترة حسب نوع الاحتياج</label>
+              <select value={filterNeed} onChange={(e) => setFilterNeed(e.target.value)}>
+                <option value="">جميع الاحتياجات</option>
+                <option value="spiritual">احتياج روحي وكنسي</option>
+                <option value="sunday_school">تربية كنسية (مدارس الأحد)</option>
+                <option value="healthcare">رعاية خاصة ومرضى</option>
+                <option value="social_support">دعم اجتماعي ورعائي</option>
+                <option value="general_visit">زيارة تعارف واطمئنان</option>
               </select>
             </div>
           </div>
         </div>
 
         <div className="form-section">
-          <h2 className="section-title">سجل الزيارات ({visits.length})</h2>
+          <h2 className="section-title">
+            {filterNeed === 'sunday_school' ? `أبناء مدارس الأحد (${visits.reduce((acc, v) => acc + (v.individuals?.length || 0), 0)})` : `سجل الزيارات (${visits.length})`}
+          </h2>
           <div style={{overflowX: 'auto'}}>
             <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'right'}} className="reports-table">
               <thead>
-                <tr style={{background: 'var(--primary-color)', color: 'white'}}>
-                  <th style={{padding: '1rem'}}>التاريخ</th>
-                  <th style={{padding: '1rem'}}>الأسرة</th>
-                  <th style={{padding: '1rem'}}>العنوان</th>
-                  <th style={{padding: '1rem'}}>الخادم</th>
-                  <th style={{padding: '1rem'}}>التصنيف</th>
-                  <th className="no-print" style={{padding: '1rem'}}>إجراءات</th>
-                </tr>
+                {filterNeed === 'sunday_school' ? (
+                  <tr style={{background: 'var(--primary-color)', color: 'white'}}>
+                    <th style={{padding: '1rem'}}>الاسم (القرابة)</th>
+                    <th style={{padding: '1rem'}}>السن / الميلاد</th>
+                    <th style={{padding: '1rem'}}>المرحلة / المدرسة</th>
+                    <th style={{padding: '1rem'}}>التليفون</th>
+                    <th style={{padding: '1rem'}}>ولي الأمر</th>
+                    <th className="no-print" style={{padding: '1rem'}}>إجراءات الزيارة</th>
+                  </tr>
+                ) : (
+                  <tr style={{background: 'var(--primary-color)', color: 'white'}}>
+                    <th style={{padding: '1rem'}}>التاريخ</th>
+                    <th style={{padding: '1rem'}}>الأسرة</th>
+                    <th style={{padding: '1rem'}}>العنوان</th>
+                    {filterNeed === 'healthcare' && <th style={{padding: '1rem'}}>اسم المريض</th>}
+                    <th style={{padding: '1rem'}}>الخادم</th>
+                    <th style={{padding: '1rem'}}>التصنيف</th>
+                    <th className="no-print" style={{padding: '1rem'}}>إجراءات</th>
+                  </tr>
+                )}
               </thead>
               <tbody>
-                {visits.map(v => (
-                  <tr key={v.id} style={{borderBottom: '1px solid #e2e8f0', background: v.isResolved ? '#f8fafc' : 'white'}}>
-                    <td style={{padding: '1rem'}}>
-                      {new Date(v.visitDate).toLocaleDateString('ar-EG')}
-                      {v.isResolved && <div style={{color: '#10b981', fontSize: '0.85rem', marginTop: '0.25rem'}}>✔️ محلولة</div>}
-                    </td>
-                    <td style={{padding: '1rem'}}>
-                      <strong>{v.family ? v.family.primaryContactName : '-'}</strong><br/>
-                      <span style={{fontSize: '0.85rem', color: '#64748b'}} dir="ltr" style={{display: 'inline-block'}}>{v.family ? v.family.phoneNumber : ''}</span>
-                    </td>
-                    <td style={{padding: '1rem'}}>{v.family ? `${v.family.area} - ${v.family.street}` : '-'}</td>
-                    <td style={{padding: '1rem'}}>
-                      {v.servant ? v.servant.name : 'غير محدد'}<br/>
-                      <span style={{fontSize: '0.85rem', color: '#64748b'}}>{v.wasPriestPresent ? `كاهن: ${v.priestName}` : ''}</span>
-                    </td>
-                    <td style={{padding: '1rem'}}>
-                      <span className={`flag-badge flag-${v.priorityFlag.toLowerCase()}`} style={{padding: '0.25rem 0.5rem', fontSize: '0.8rem', margin: 0, opacity: v.isResolved ? 0.6 : 1}}>
-                        {v.priorityFlag === 'RED' ? '🔴 عاجل' : v.priorityFlag === 'YELLOW' ? '🟡 متابعة' : '🟢 روتيني'}
-                      </span>
-                    </td>
-                    <td className="no-print" style={{padding: '1rem'}}>
-                      <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-                        <button 
-                          onClick={() => handleViewSingle(v)} 
-                          className="submit-btn" 
-                          style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#64748b'}}
-                        >
-                          👁️ عرض
+                {filterNeed === 'sunday_school' ? (
+                  visits.flatMap(v => v.individuals?.map(ind => (
+                    <tr key={`${v.id}-${ind.id}`} style={{borderBottom: '1px solid #e2e8f0', background: v.isResolved ? '#f8fafc' : 'white'}}>
+                      <td style={{padding: '1rem'}}>
+                        <strong>{ind.childName}</strong> <span style={{fontSize: '0.85rem', color: '#64748b'}}>({ind.relation || 'ابن/ابنة'})</span>
+                      </td>
+                      <td style={{padding: '1rem'}}>
+                        {ind.age || '-'}<br/><span style={{fontSize: '0.85rem'}}>{ind.dateOfBirth}</span>
+                      </td>
+                      <td style={{padding: '1rem'}}>
+                        {ind.educationalStage || '-'}<br/><span style={{fontSize: '0.85rem'}}>{ind.schoolCollegeName}</span>
+                      </td>
+                      <td style={{padding: '1rem'}} dir="ltr">{ind.phoneNumber || '-'}</td>
+                      <td style={{padding: '1rem'}}>
+                        {v.family?.primaryContactName}<br/>
+                        <span style={{fontSize: '0.85rem'}} dir="ltr">{v.family?.phoneNumber}</span>
+                      </td>
+                      <td className="no-print" style={{padding: '1rem'}}>
+                        <button onClick={() => navigate(`/edit-visit/${v.id}`)} className="submit-btn" style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#3b82f6'}}>
+                          ✏️ تعديل الزيارة
                         </button>
-                        <button 
-                          onClick={() => handlePrintSingle(v)} 
-                          className="submit-btn" 
-                          style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#334155'}}
-                        >
-                          🖨️ طباعة
-                        </button>
-                        <button 
-                          onClick={() => navigate(`/edit-visit/${v.id}`)} 
-                          className="submit-btn" 
-                          style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#3b82f6'}}
-                        >
-                          ✏️ تعديل
-                        </button>
-                        {!v.isResolved && (
-                          <button 
-                            onClick={() => handleResolveVisit(v.id)} 
-                            className="submit-btn" 
-                            style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#10b981'}}
-                          >
-                            ✔️ تمت
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  )))
+                ) : (
+                  visits.map(v => (
+                    <tr key={v.id} style={{borderBottom: '1px solid #e2e8f0', background: v.isResolved ? '#f8fafc' : 'white'}}>
+                      <td style={{padding: '1rem'}}>
+                        {new Date(v.visitDate).toLocaleDateString('ar-EG')}
+                        {v.isResolved && <div style={{color: '#10b981', fontSize: '0.85rem', marginTop: '0.25rem'}}>✔️ محلولة</div>}
+                      </td>
+                      <td style={{padding: '1rem'}}>
+                        <strong>{v.family ? v.family.primaryContactName : '-'}</strong><br/>
+                        <span style={{fontSize: '0.85rem', color: '#64748b'}} dir="ltr" style={{display: 'inline-block'}}>{v.family ? v.family.phoneNumber : ''}</span>
+                      </td>
+                      <td style={{padding: '1rem'}}>{v.family ? `${v.family.area} - ${v.family.street}` : '-'}</td>
+                      
+                      {filterNeed === 'healthcare' && (
+                        <td style={{padding: '1rem'}}>
+                          <strong>{v.healthcarePatientName || 'غير محدد'}</strong>
+                        </td>
+                      )}
+
+                      <td style={{padding: '1rem'}}>
+                        {v.servant ? v.servant.name : 'غير محدد'}<br/>
+                        <span style={{fontSize: '0.85rem', color: '#64748b'}}>{v.wasPriestPresent ? `كاهن: ${v.priestName}` : ''}</span>
+                      </td>
+                      <td style={{padding: '1rem'}}>
+                        <span className={`flag-badge flag-${v.priorityFlag.toLowerCase()}`} style={{padding: '0.25rem 0.5rem', fontSize: '0.8rem', margin: 0, opacity: v.isResolved ? 0.6 : 1}}>
+                          {v.priorityFlag === 'RED' ? '🔴 عاجل' : v.priorityFlag === 'YELLOW' ? '🟡 متابعة' : '🟢 روتيني'}
+                        </span>
+                      </td>
+                      <td className="no-print" style={{padding: '1rem'}}>
+                        <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
+                          <button onClick={() => handleViewSingle(v)} className="submit-btn" style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#64748b'}}>👁️ عرض</button>
+                          <button onClick={() => handlePrintSingle(v)} className="submit-btn" style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#334155'}}>🖨️ طباعة</button>
+                          <button onClick={() => navigate(`/edit-visit/${v.id}`)} className="submit-btn" style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#3b82f6'}}>✏️ تعديل</button>
+                          {!v.isResolved && (
+                            <button onClick={() => handleResolveVisit(v.id)} className="submit-btn" style={{width: 'auto', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: '#10b981'}}>✔️ تمت</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
                 {visits.length === 0 && (
                   <tr>
-                    <td colSpan="6" style={{padding: '2rem', textAlign: 'center', color: '#64748b'}}>لا توجد زيارات مطابقة للبحث</td>
+                    <td colSpan={filterNeed === 'healthcare' ? 7 : 6} style={{padding: '2rem', textAlign: 'center', color: '#64748b'}}>لا توجد زيارات مطابقة للبحث</td>
                   </tr>
                 )}
               </tbody>

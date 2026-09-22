@@ -4,8 +4,10 @@ import { AuthProvider, AuthContext } from './AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
+import EditVisit from './pages/EditVisit';
 import Servants from './pages/Servants';
 import Reports from './pages/Reports';
+import NeedsReports from './pages/NeedsReports';
 import Users from './pages/Users';
 
 const ProtectedRoute = ({ children, roles }) => {
@@ -47,6 +49,7 @@ const Navbar = () => {
         <>
           <Link to="/dashboard" style={linkStyle}>لوحة التحكم</Link>
           <Link to="/reports" style={linkStyle}>التقارير</Link>
+          <Link to="/needs-reports" style={linkStyle}>تقارير الاحتياجات</Link>
           <Link to="/servants" style={linkStyle}>إدارة الخدام</Link>
           <Link to="/users" style={linkStyle}>المستخدمين</Link>
         </>
@@ -95,6 +98,16 @@ export default function App() {
           <Route path="/reports" element={
             <ProtectedRoute roles={['Admin']}>
               <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="/needs-reports" element={
+            <ProtectedRoute roles={['Admin']}>
+              <NeedsReports />
+            </ProtectedRoute>
+          } />
+          <Route path="/edit-visit/:id" element={
+            <ProtectedRoute roles={['Admin']}>
+              <EditVisit />
             </ProtectedRoute>
           } />
         </Routes>

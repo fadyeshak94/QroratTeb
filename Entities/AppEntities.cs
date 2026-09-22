@@ -29,6 +29,22 @@ namespace QroratTeb.Entities
         public string PhoneNumber { get; set; } = string.Empty;
         public string WhatsAppNumber { get; set; } = string.Empty;
 
+        public string? HusbandName { get; set; }
+        public bool IsHusbandDeceased { get; set; } = false;
+        public string? HusbandPhoneNumber { get; set; }
+        public string? HusbandAge { get; set; }
+        public string? HusbandDateOfBirth { get; set; }
+        public string? HusbandConfessorName { get; set; }
+        public string? HusbandJob { get; set; }
+
+        public string? WifeName { get; set; }
+        public bool IsWifeDeceased { get; set; } = false;
+        public string? WifePhoneNumber { get; set; }
+        public string? WifeAge { get; set; }
+        public string? WifeDateOfBirth { get; set; }
+        public string? WifeConfessorName { get; set; }
+        public string? WifeJob { get; set; }
+
         // Address
         public string Area { get; set; } = string.Empty;
         public string Street { get; set; } = string.Empty;
@@ -78,6 +94,7 @@ namespace QroratTeb.Entities
         public string? HealthCategory { get; set; }
         public string? HealthcareAssistanceTypes { get; set; } // Comma separated
         public string? CaregiverAvailable { get; set; }
+        public string? HealthcarePatientName { get; set; }
 
         // Social
         public string? SupportLevel { get; set; }
@@ -100,9 +117,16 @@ namespace QroratTeb.Entities
         public int VisitId { get; set; }
         public Visit? Visit { get; set; }
 
-        public string ChildName { get; set; } = string.Empty;
+        public string ChildName { get; set; } = string.Empty; // Used as generic Name now
+        public string? PhoneNumber { get; set; }
+        public string? Age { get; set; }
+        public string? DateOfBirth { get; set; }
+        public string? Relation { get; set; } // Father, Mother, Son, etc.
+        public string? ConfessorName { get; set; }
+
         public string EducationalStage { get; set; } = string.Empty;
         public string? SchoolCollegeName { get; set; }
         public string NonAttendanceReason { get; set; } = string.Empty;
+        public string? OtherChurchName { get; set; }
     }
 }
